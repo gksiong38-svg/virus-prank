@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>⚠️ ລະບົບພົບໄວຣັສ!</title>
 
-<!-- ຟອນສາກົນ -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@300;400;500;600;700&family=Noto+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -32,6 +31,9 @@
     color: white;
     padding: 30px;
     max-width: 600px;
+  }
+
+  .shake-anim {
     animation: shake 0.4s infinite;
   }
 
@@ -51,14 +53,38 @@
     50% { opacity: 0.2; }
   }
 
-  h1 {
+  h1.title {
     font-size: 2.2rem;
     font-weight: 700;
     margin: 20px 0;
     text-shadow: 2px 2px 5px black;
   }
 
-  .scan-line {
+  .webcam-box {
+    background: black;
+    border: 3px solid #ff4444;
+    border-radius: 10px;
+    padding: 15px;
+    margin: 15px 0;
+    animation: pulse 1s infinite;
+  }
+
+  .webcam-icon {
+    font-size: 2rem;
+  }
+
+  .countdown-box {
+    background: rgba(0,0,0,0.6);
+    border: 2px solid #ff0000;
+    border-radius: 10px;
+    padding: 15px;
+    margin: 15px 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #ffcc00;
+  }
+
+  .typing-text {
     text-align: left;
     background: black;
     padding: 20px;
@@ -67,16 +93,11 @@
     font-size: 0.95rem;
     max-height: 200px;
     overflow: hidden;
+    min-height: 100px;
   }
 
-  .scan-line p {
+  .typing-text p {
     margin: 5px 0;
-    opacity: 0;
-    animation: fadeIn 0.3s forwards;
-  }
-
-  @keyframes fadeIn {
-    to { opacity: 1; }
   }
 
   .progress-container {
@@ -111,14 +132,20 @@
   .close-btn {
     margin-top: 20px;
     padding: 12px 30px;
-    background: white;
-    color: #8b0000;
-    border: none;
+    background: #555;
+    color: white;
+    border: 2px solid #888;
     border-radius: 8px;
     cursor: pointer;
     font-size: 1.1rem;
     font-weight: 600;
     display: none;
+    position: relative;
+    z-index: 100;
+  }
+
+  .close-btn:hover {
+    background: #666;
   }
 
   .fake-btn {
@@ -132,6 +159,7 @@
     font-size: 1.1rem;
     font-weight: 600;
     animation: pulse 1s infinite;
+    position: relative;
   }
 
   @keyframes pulse {
@@ -166,26 +194,36 @@
 </head>
 <body>
 
-<div class="container" id="mainScreen">
+<div class="container shake-anim" id="mainScreen">
   <div class="warning-icon">☠️</div>
-  <h1>ພົບໄວຣັສອັນຕະລາຍ!</h1>
+  <h1 class="title">ພົບໄວຣັສອັນຕະລາຍ!</h1>
   <div class="infected-count" id="infectedCount">ໄຟລ໌ຕິດເຊື້ອ: 0</div>
 
-  <div class="scan-line" id="scanLog"></div>
+  <div class="webcam-box" id="webcamBox">
+    <div class="webcam-icon">📷</div>
+    <p>⚠️ ກຳລັງເປີດ Webcam ເພື່ອບັນທຶກໜ້າທ່ານ...</p>
+  </div>
+
+  <div class="countdown-box" id="countdownBox">
+    ⏰ ຂໍ້ມູນຈະຖືກລົບໃນ: <span id="countdownTimer">60</span> ວິນາທີ
+  </div>
+
+  <div class="typing-text" id="scanLog"></div>
 
   <div class="progress-container">
     <div class="progress-fill" id="progressFill">0%</div>
   </div>
 
   <button class="fake-btn" id="cleanBtn" onclick="startClean()">🛡️ ກຳຈັດໄວຣັສດ່ວນ!</button>
-  <button class="close-btn" id="closeBtn" onclick="reveal()">ຢອກເດີໆ ກົດເບິ່ງນີ້ 😂</button>
+  <button class="close-btn" id="closeBtn" onclick="handleClose()">ອອກຈາກລະບົບ</button>
 </div>
 
 <div class="reveal" id="revealBox">
   <h2>😂 ຫຼອກເລີຍເນາະ!</h2>
   <p>
     ບໍ່ມີໄວຣັສຫຍັງເລີຍ ນີ້ແມ່ນ <b>ຢອກ Prank</b> ທຳມະດາ<br>
-    ຄອມ/ໂທລະສັບຂອງເຈົ້າ <b>ປອດໄພ 100%</b> 🎉
+    ຄອມ/ໂທລະສັບຂອງເຈົ້າ <b>ປອດໄພ 100%</b> 🎉<br>
+    Webcam ກໍ່ບໍ່ໄດ້ຖືກເປີດ, ຂໍ້ມູນບໍ່ໄດ້ຖືກລົບຫຍັງເລີຍ 😄
   </p>
   <p style="font-size: 0.9rem; opacity: 0.7;">— ຂໍໂທດທີ່ເຮັດໃຫ້ຕົກໃຈ 🙏</p>
 </div>
@@ -195,11 +233,15 @@
 </audio>
 
 <script>
+  let closeClickCount = 0;
+  const requiredClicks = 3; // ຕ້ອງກົດ 3 ຄັ້ງຈຶ່ງອອກໄດ້
+
   const scanLog = document.getElementById('scanLog');
   const progressFill = document.getElementById('progressFill');
   const infectedCount = document.getElementById('infectedCount');
   const closeBtn = document.getElementById('closeBtn');
   const cleanBtn = document.getElementById('cleanBtn');
+  const mainScreen = document.getElementById('mainScreen');
 
   const fakeFiles = [
     'System32/kernel.dll',
@@ -211,12 +253,47 @@
     'Desktop/important.docx',
     'Pictures/screenshot.png',
     'Videos/family.mp4',
-    'Contacts/backup.vcf'
+    'Contacts/backup.vcf',
+    'Banking/account_info.dat',
+    'Social/facebook_session.tmp'
   ];
 
   let count = 0;
   let progress = 0;
   let fileIndex = 0;
+  let countdownValue = 60;
+
+  // ===== ເລີ່ມທັນທີທີ່ໜ້າ Load =====
+  window.onload = function () {
+    startCountdown();
+    makeCloseBtnEscape();
+    playAlarm();
+    startScan();
+  };
+
+  function startCountdown() {
+    const timerEl = document.getElementById('countdownTimer');
+    const interval = setInterval(() => {
+      countdownValue--;
+      timerEl.textContent = countdownValue;
+      if (countdownValue <= 0) {
+        clearInterval(interval);
+        timerEl.textContent = '0';
+      }
+    }, 1000);
+  }
+
+  function makeCloseBtnEscape() {
+    closeBtn.addEventListener('mouseenter', () => {
+      if (closeClickCount < requiredClicks - 1) {
+        const x = (Math.random() - 0.5) * 300;
+        const y = (Math.random() - 0.5) * 100;
+        closeBtn.style.position = 'relative';
+        closeBtn.style.left = x + 'px';
+        closeBtn.style.top = y + 'px';
+      }
+    });
+  }
 
   function playAlarm() {
     const audio = document.getElementById('alarmSound');
@@ -224,25 +301,14 @@
   }
 
   function startScan() {
-    playAlarm();
-
     const scanInterval = setInterval(() => {
-      progress += Math.random() * 8 + 2;
+      progress += Math.random() * 6 + 2;
       if (progress > 100) progress = 100;
       progressFill.style.width = progress + '%';
       progressFill.textContent = Math.floor(progress) + '%';
 
       if (fileIndex < fakeFiles.length) {
-        const p = document.createElement('p');
-        p.style.color = Math.random() > 0.5 ? '#ff5555' : '#ffcc00';
-        const infected = Math.random() > 0.6;
-        p.textContent = `⚠️ ກຳລັງກວດ: ${fakeFiles[fileIndex]} ... ${infected ? 'ຕິດເຊື້ອ!' : 'OK'}`;
-        if (infected) {
-          count++;
-          infectedCount.textContent = 'ໄຟລ໌ຕິດເຊື້ອ: ' + count;
-        }
-        scanLog.appendChild(p);
-        scanLog.scrollTop = scanLog.scrollHeight;
+        typeLine(fakeFiles[fileIndex]);
         fileIndex++;
       }
 
@@ -257,6 +323,31 @@
     }, 400);
   }
 
+  function typeLine(filename) {
+    const infected = Math.random() > 0.5;
+    const text = `⚠️ ກຳລັງກວດ: ${filename} ... ${infected ? 'ຕິດເຊື້ອ!' : 'OK'}`;
+    
+    if (infected) {
+      count++;
+      infectedCount.textContent = 'ໄຟລ໌ຕິດເຊື້ອ: ' + count;
+    }
+
+    const p = document.createElement('p');
+    p.style.color = infected ? '#ff5555' : '#ffcc00';
+    scanLog.appendChild(p);
+    scanLog.scrollTop = scanLog.scrollHeight;
+
+    let i = 0;
+    const typeInterval = setInterval(() => {
+      if (i < text.length) {
+        p.textContent += text[i];
+        i++;
+      } else {
+        clearInterval(typeInterval);
+      }
+    }, 15);
+  }
+
   function startClean() {
     cleanBtn.disabled = true;
     cleanBtn.textContent = '🔄 ກຳລັງກຳຈັດ...';
@@ -267,16 +358,28 @@
     }, 2000);
   }
 
+  function handleClose() {
+    closeClickCount++;
+
+    if (closeClickCount < requiredClicks) {
+      closeBtn.textContent = 'ກະລຸນາລໍຖ້າ...';
+      setTimeout(() => {
+        closeBtn.textContent = 'ອອກຈາກລະບົບ';
+      }, 800);
+      return;
+    }
+
+    reveal();
+  }
+
   function reveal() {
-    document.getElementById('mainScreen').style.display = 'none';
+    document.body.classList.remove('shake-anim');
+    mainScreen.classList.remove('shake-anim');
+    mainScreen.style.display = 'none';
     document.body.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
     document.getElementById('revealBox').style.display = 'block';
   }
 
-  // ເລີ່ມ scan ອັດຕະໂນມັດທັນທີທີ່ໜ້າເປີດ
-  window.onload = startScan;
-
-  // ປ້ອງກັນບໍ່ໃຫ້ອອກງ່າຍ (ຫຼອກ)
   window.onbeforeunload = function () {
     return "ໄວຣັສຍັງບໍ່ຖືກກຳຈັດ! ແນ່ໃຈບໍ່ວ່າຢາກອອກ?";
   };
